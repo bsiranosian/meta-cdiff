@@ -1,0 +1,40 @@
+# processing notes for britton lab samples
+
+source activate britton
+cd /labs/asbhatt/gsfs0/bsiranos/britton_10x/raw
+
+cutadapt -o 3.trim/em/foo -m 60 --trim-n -q 30,30 
+
+# PAIRED VERSION
+CORES=1
+cutadapt --cores=$CORES -o ../trim/Bhatt_pool_short_1.fq -p ../trim/Bhatt_pool_short_2.fq -m 60 --trim-n -q 30,30 --too-short-output ../trim/Bhatt_pool_short_filtered_1.fq --too-short-paired-output ../trim/Bhatt_pool_short_filtered_2.fq Bhatt_pool_short_1.fq Bhatt_pool_short_2.fq
+
+# UNPAIRED VERSION
+CORES=8
+cutadapt --cores=$CORES -o ../trim/unpaired/Bhatt_pool_short_1.fq -m 60 --trim-n -q 30,30  Bhatt_pool_short_1.fq 
+cutadapt --cores=$CORES -o ../trim/unpaired/Bhatt_pool_short_2.fq -m 60 --trim-n -q 30,30  Bhatt_pool_short_2.fq 
+
+# sync script
+python ../../sync.py ../../raw/Bhatt_pool_short_1.fq Bhatt_pool_short_1.fq Bhatt_pool_short_2.fq Bhatt_pool_short_sync_1.fq Bhatt_pool_short_sync_2.fq Bhatt_pool_short_orphans.fq 
+
+# do fastqc 
+cd /labs/asbhatt/gsfs0/bsiranos/britton_10x/
+mkdir fastqc
+module load fastqc
+fastqc -o fastqc trim/unpaired/Bhatt_pool_short_sync_1.fq  trim/unpaired/Bhatt_pool_short_sync_2.fq 
+
+#extract barcodes to fastq description field
+module load longranger
+longranger basic --id bhatt_short --fastqs trim/unpaired/
+longranger basic --fastqs=1.demux --id=ab2 --sample=AB --localcores=32 --localmem=60 --jobmode=local
+ssubN_Xhrs bc_em2 64 100 -m ea -M elimoss@stanford.edu -now y longranger basic --fastqs=1.demux --id=em2 --sample=EM --localcores=32 --localmem=60 --jobmode=local
+#for any samplesheet
+cat samplesheet.csv | tr ‘,’ ‘\t’ | cut -f2 | sed ‘1d’ | xargs -n 1 -I foo ssubN_Xhrs bc_foo 64 100 -hold_jid 8452069 -m ea -M elimoss@stanford.edu longranger basic --fastqs=fq/ --id=foo --sample=foo --localcores=32 --localmem=60 --jobmode=local
+
+
+    
+Index
+Bhatt_5       SI-GA-A2,TTTCATGA,ACGTCCCT,CGCATGTG,GAAGGAAC
+Bhatt_6       SI-GA-B2,TACTCTTC,CCTGTGCG,GGACACGT,ATGAGAAA
+EM_0.1X       SI-GA-C2,CCTAGACC,ATCTCTGT,TAGCTCTA,GGAGAGAG
+EM_carrier90  SI-GA-D2,TAACAAGG,GGTTCCTC,ATCATGCA,CCGGGTAT

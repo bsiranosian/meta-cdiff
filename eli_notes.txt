@@ -1,0 +1,23 @@
+
+#trim
+ls 1.demux/em/split_deinterleaved/ | xargs -n 1 -I foo sh -c "ssub8 cut cutadapt 1.demux/em/split_deinterleaved/foo -o 3.trim/em/foo -m 60 --trim-n -q 30,30 &"
+ls 1.demux/ab/split_deinterleaved/ | xargs -n 1 -I foo sh -c "ssub8 cut cutadapt 1.demux/ab/split_deinterleaved/foo -o 3.trim/ab/foo -m 60 --trim-n -q 30,30 &"
+#fastqc after
+#sync reads and keep orphans
+export SAMPLE=em
+ls 1.demux/$SAMPLE/split_deinterleaved | tr '_' '\t' | cut -f1-2 | tr '\t' '_' | sort -u | xargs -n 1 -I foo sh -c "ssub8 sync$SAMPLE scripts/sync2.sh 1.demux/$SAMPLE/split_deinterleaved/foo_1.fq.gz 3.trim/$SAMPLE/foo_1.fq.gz 3.trim/$SAMPLE/foo_2.fq.gz 4.sync/$SAMPLE/foo_1.fq.gz 4.sync/$SAMPLE/foo_2.fq.gz 4.sync/$SAMPLE/foo_orphans.fq.gz &"
+
+#download raw bcl files, interops and metadata
+#untar
+module add longranger/2.1.3
+ssubN_Xhrs fq 100 24 -now y longranger mkfastq --run=. --output-dir=fq --samplesheet=samplesheet.csv --ignore-dual-index
+#fastqc on two healthy 10x samples
+ls 1.demux | xargs -n 1 -I foo ~/local/bin/ssub8 fqc fastqc -t 16 -o 2.fastqc/foo 1.demux/foo/*_R*.fastq.gz
+#extract barcodes to fastq description field
+module add longranger
+ssubN_Xhrs bc_ab2 64 100 -m ea -M elimoss@stanford.edu -now y longranger basic --fastqs=1.demux --id=ab2 --sample=AB --localcores=32 --localmem=60 --jobmode=local
+ssubN_Xhrs bc_em2 64 100 -m ea -M elimoss@stanford.edu -now y longranger basic --fastqs=1.demux --id=em2 --sample=EM --localcores=32 --localmem=60 --jobmode=local
+#for any samplesheet
+cat samplesheet.csv | tr ‘,’ ‘\t’ | cut -f2 | sed ‘1d’ | xargs -n 1 -I foo ssubN_Xhrs bc_foo 64 100 -hold_jid 8452069 -m ea -M elimoss@stanford.edu longranger basic --fastqs=fq/ --id=foo --sample=foo --localcores=32 --localmem=60 --jobmode=local
+
+
