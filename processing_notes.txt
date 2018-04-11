@@ -31,10 +31,15 @@ ssubN_Xhrs bc_em2 64 100 -m ea -M elimoss@stanford.edu -now y longranger basic -
 #for any samplesheet
 cat samplesheet.csv | tr ‘,’ ‘\t’ | cut -f2 | sed ‘1d’ | xargs -n 1 -I foo ssubN_Xhrs bc_foo 64 100 -hold_jid 8452069 -m ea -M elimoss@stanford.edu longranger basic --fastqs=fq/ --id=foo --sample=foo --localcores=32 --localmem=60 --jobmode=local
 
-
-    
+   
 Index
 Bhatt_5       SI-GA-A2,TTTCATGA,ACGTCCCT,CGCATGTG,GAAGGAAC
 Bhatt_6       SI-GA-B2,TACTCTTC,CCTGTGCG,GGACACGT,ATGAGAAA
 EM_0.1X       SI-GA-C2,CCTAGACC,ATCTCTGT,TAGCTCTA,GGAGAGAG
 EM_carrier90  SI-GA-D2,TAACAAGG,GGTTCCTC,ATCATGCA,CCGGGTAT
+
+
+### working on test sample in BCL file format
+cd /ifs/scratch/bsiranos/10x_test/raw
+module load longranger
+longranger mkfastq --run=. --output-dir=fq --samplesheet=samplesheet.csv --ignore-dual-index

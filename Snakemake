@@ -1,0 +1,36 @@
+# snakemake pipeline for processing 10x metagenomics data   
+confgfile: "config.yaml"
+SAMPLE_PROJECT=config['sample_project']
+SAMPLE_IDS=config['sample_ids']
+SAMPLE_REPS=config['sample_reps']
+
+rule mkfastq:
+    input:
+        run_dir=".",
+        samplesheet="samplesheet.csv"
+    output:
+        "fq/{SAMPLE_PROJECT}"
+    resources:
+        mem=8, 
+        time=2
+    shell:
+        """
+        module load longranger
+        longranger mkfastq --run={input.run_dir} --output-dir=fq --samplesheet={input.samplesheet} --ignore-dual-index"
+        """
+
+rule fastqc:
+    input:
+        expand("fq/{SAMPLE_PROJECT}/{ID}_{REP}/*.fastq.gz", ID=SAMPLE_IDS, REP=SAMPLE_REPS)
+    output:
+        expand("fasqc/{SAMPLE_PROJECT}/{ID}_{REP}", ID=SAMPLE_IDS, REP=SAMPLE_REPS)
+    resources:
+        mem=8, 
+        time=2,
+        ntasks=8
+    shell:
+        """
+        module load fastqc
+        fastqc -t {resources.ntasks} -o {output} {input}
+        """
+

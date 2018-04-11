@@ -1,0 +1,4 @@
+# name of sample project
+sample_project: "six_clinical"
+sample_ids: ["4018_1-13-16","4018_12-15-15","4018_1-19-16","4018_2-23-16","6161_10-6-15","6161_11-10-15"]
+sample_reps: ["1","2","3","4"]
